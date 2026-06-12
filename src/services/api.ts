@@ -139,18 +139,25 @@ function parseArrayLenient<S extends z.ZodTypeAny>(schema: S, value: unknown): z
   return out;
 }
 
+function extractRpcRecords(payload: RpcRecordsPayload, key?: string): unknown[] {
+  if (Array.isArray(payload.records)) return payload.records;
+  if (!payload.records || typeof payload.records !== "object") return [];
+
+  const recordsByKey = payload.records as Record<string, unknown>;
+  if (key && Array.isArray(recordsByKey[key])) {
+    return recordsByKey[key];
+  }
+
+  return Object.values(recordsByKey).flatMap((value) =>
+    Array.isArray(value) ? value : [],
+  );
+}
+
 function normalizeRpcLoadRecords(
   uuid: string,
   payload: RpcRecordsPayload,
 ): LoadRecordsResponse {
-  const rawRecords = Array.isArray(payload.records)
-    ? payload.records
-    : payload.records &&
-        typeof payload.records === "object" &&
-        Array.isArray((payload.records as Record<string, unknown>)[uuid])
-      ? (payload.records as Record<string, unknown>)[uuid]
-      : [];
-  const records = parseArrayLenient(LoadRecordSchema, rawRecords);
+  const records = parseArrayLenient(LoadRecordSchema, extractRpcRecords(payload, uuid));
   return {
     count: payload.count || records.length,
     records,
@@ -173,9 +180,10 @@ function derivePingTasks(records: PingRecordsResponse["records"]): PingTask[] {
 }
 
 function normalizeRpcPingRecords(
+  uuid: string,
   payload: RpcRecordsPayload,
 ): PingRecordsResponse {
-  const records = parseArrayLenient(PingRecordSchema, payload.records);
+  const records = parseArrayLenient(PingRecordSchema, extractRpcRecords(payload, uuid));
   const parsedTasks = z.array(PingTaskSchema).safeParse(payload.tasks);
   const tasks = parsedTasks.success ? parsedTasks.data : derivePingTasks(records);
   return {
@@ -188,7 +196,7 @@ function normalizeRpcPingRecords(
 function normalizeRpcPingOverview(
   payload: RpcRecordsPayload,
 ): PingOverviewResponse {
-  const records = parseArrayLenient(PingRecordSchema, payload.records);
+  const records = parseArrayLenient(PingRecordSchema, extractRpcRecords(payload));
   const parsedTasks = z.array(PingTaskSchema).safeParse(payload.tasks);
   const basicInfo = z.array(PingBasicInfoSchema).safeParse(payload.basic_info);
   return {
@@ -270,7 +278,7 @@ export async function getPingRecords(
       },
       RpcRecordsSchema,
     );
-    return normalizeRpcPingRecords(payload);
+    return normalizeRpcPingRecords(uuid, payload);
   } catch {
     return (await apiGet(
       `/api/records/ping?uuid=${encodeURIComponent(uuid)}&hours=${hours}`,

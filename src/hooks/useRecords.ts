@@ -1,4 +1,4 @@
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { getLoadRecords, getPingRecords } from "@/services/api";
 
 export function useLoadRecords(uuid: string, hours = 6, enabled = true) {
@@ -6,7 +6,6 @@ export function useLoadRecords(uuid: string, hours = 6, enabled = true) {
     queryKey: ["records", "load", uuid, hours],
     queryFn: () => getLoadRecords(uuid, hours),
     staleTime: 30_000,
-    placeholderData: keepPreviousData,
     enabled: Boolean(uuid) && enabled,
   });
 }
@@ -16,7 +15,6 @@ export function usePingRecords(uuid: string, hours = 6, enabled = true) {
     queryKey: ["records", "ping", uuid, hours],
     queryFn: () => getPingRecords(uuid, hours),
     staleTime: 30_000,
-    placeholderData: keepPreviousData,
     enabled: Boolean(uuid) && enabled,
   });
 }

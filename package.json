@@ -9,7 +9,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "package": "node scripts/make-preview.mjs && node scripts/package-zip.mjs",
+    "package": "npm run build && node scripts/make-preview.mjs && node scripts/package-zip.mjs",
     "lint": "eslint .",
     "typecheck": "tsc -b",
     "test": "vitest run",
