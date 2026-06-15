@@ -38,15 +38,10 @@ interface TimeRangeOption {
   value: number;
 }
 
-const LOAD_TIME_RANGE_OPTIONS: TimeRangeOption[] = [
-  { label: "1 小时", value: 1 },
-  { label: "4 小时", value: 4 },
-  { label: "1 天", value: 24 },
-  { label: "7 天", value: 168 },
-  { label: "30 天", value: 720 },
-];
-
-const PING_TIME_RANGE_OPTIONS: TimeRangeOption[] = [
+// Load and ping share the same history presets; the only difference is whether a
+// "实时" option is prepended, which buildHistoryRangeOptions handles via its
+// includeRealtime flag rather than via the preset list itself.
+const TIME_RANGE_OPTIONS: TimeRangeOption[] = [
   { label: "1 小时", value: 1 },
   { label: "4 小时", value: 4 },
   { label: "1 天", value: 24 },
@@ -88,11 +83,11 @@ function buildHistoryRangeOptions(
 }
 
 export function buildLoadTimeRangeOptions(maxHours: number | null | undefined) {
-  return buildHistoryRangeOptions(LOAD_TIME_RANGE_OPTIONS, maxHours, true);
+  return buildHistoryRangeOptions(TIME_RANGE_OPTIONS, maxHours, true);
 }
 
 export function buildPingTimeRangeOptions(maxHours: number | null | undefined) {
-  return buildHistoryRangeOptions(PING_TIME_RANGE_OPTIONS, maxHours, false);
+  return buildHistoryRangeOptions(TIME_RANGE_OPTIONS, maxHours, false);
 }
 
 const GRID_CHART_DEFAULT = { w: 420, h: 150 };
@@ -118,16 +113,6 @@ export function toChartSeconds(value: string | number): number {
   }
   const parsed = Date.parse(value);
   return Number.isNaN(parsed) ? 0 : parsed / 1000;
-}
-
-export function formatHourMinuteAxis(_self: uPlot, splits: number[]): string[] {
-  return splits.map((value) => {
-    const date = new Date(value * 1000);
-    return `${date.getHours().toString().padStart(2, "0")}:${date
-      .getMinutes()
-      .toString()
-      .padStart(2, "0")}`;
-  });
 }
 
 function pad2(value: number) {

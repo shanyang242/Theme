@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import ts from "typescript";
@@ -44,11 +45,25 @@ function runTypecheck() {
   }
 }
 
+function assertVersionsAligned() {
+  const pkg = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"));
+  const manifest = JSON.parse(readFileSync(resolve(root, "komari-theme.json"), "utf8"));
+  if (pkg.version !== manifest.version) {
+    throw new Error(
+      `Version mismatch: package.json is ${pkg.version} but komari-theme.json is ${manifest.version}. ` +
+        "Align them before releasing — the packaged zip is named from komari-theme.json.",
+    );
+  }
+}
+
 async function importScript(path) {
   const url = pathToFileURL(resolve(root, path));
   url.search = `?t=${Date.now()}`;
   await import(url.href);
 }
+
+console.log("Checking versions...");
+assertVersionsAligned();
 
 console.log("Type checking...");
 runTypecheck();

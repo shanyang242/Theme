@@ -1,7 +1,7 @@
 // Packages komaritheme-vX.Y.Z.zip ready for `komari-theme.json` + `preview.png` + `dist/` drop-in.
 // Uses Node's builtin zlib via a minimal zip stream (no external deps).
 
-import { createWriteStream, readdirSync, readFileSync, statSync } from "node:fs";
+import { createWriteStream, existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import zlib from "node:zlib";
@@ -36,10 +36,26 @@ function walk(dir, base = dir) {
   return out;
 }
 
+const distDir = resolve(root, "dist");
+const previewPath = resolve(root, "preview.png");
+
+// Fail with an actionable message instead of a raw ENOENT stack when this script
+// is run on its own (the normal `npm run package`/release flow builds + generates
+// the preview first, so these always exist there).
+for (const [path, hint] of [
+  [previewPath, "run `node scripts/make-preview.mjs` (or `npm run package`) first"],
+  [distDir, "run `npm run build` (or `npm run package`) first"],
+]) {
+  if (!existsSync(path)) {
+    console.error(`package-zip: missing ${relative(root, path)} — ${hint}.`);
+    process.exit(1);
+  }
+}
+
 const entries = [
   { path: "komari-theme.json", full: resolve(root, "komari-theme.json") },
-  { path: "preview.png", full: resolve(root, "preview.png") },
-  ...walk(resolve(root, "dist"), root),
+  { path: "preview.png", full: previewPath },
+  ...walk(distDir, root),
 ];
 
 const stream = createWriteStream(outPath);

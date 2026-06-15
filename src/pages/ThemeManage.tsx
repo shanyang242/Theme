@@ -127,14 +127,18 @@ function applyClientAssignment(
   return next;
 }
 
-function getAssignedTaskId(
-  bindings: HomepagePingTaskBindings,
-  clientUuid: string,
-): string | null {
+// Inverted lookup: client uuid → the task id (string key) it's bound to. The UI
+// keeps every client in at most one task, so a plain last-write map is exact.
+// Shared by the "全选可用" reducer below and the per-render selectable-clients
+// filter so the "which task owns this client" derivation lives in one place.
+function invertBindings(bindings: HomepagePingTaskBindings): Map<string, string> {
+  const assignedTaskByClient = new Map<string, string>();
   for (const [taskId, clients] of Object.entries(bindings)) {
-    if (clients.includes(clientUuid)) return taskId;
+    for (const clientUuid of clients) {
+      assignedTaskByClient.set(clientUuid, taskId);
+    }
   }
-  return null;
+  return assignedTaskByClient;
 }
 
 function applyAvailableClientAssignments(
@@ -144,10 +148,11 @@ function applyAvailableClientAssignments(
 ) {
   const taskKey = String(taskId);
   const next = pruneBindings(bindings);
+  const assignedTaskByClient = invertBindings(next);
   const selected = new Set(next[taskKey] ?? []);
 
   for (const clientUuid of clientUuids) {
-    const assignedTaskId = getAssignedTaskId(next, clientUuid);
+    const assignedTaskId = assignedTaskByClient.get(clientUuid);
     if (assignedTaskId && assignedTaskId !== taskKey) continue;
     selected.add(clientUuid);
   }
@@ -393,17 +398,14 @@ export function ThemeManage() {
     [draftBindings],
   );
 
-  // Inverted lookup of which task each client is bound to. Rebuilt only when
-  // draftBindings changes (so it never goes stale across edits). Replaces the
-  // per-render getAssignedTaskId() scan, turning the selectable-clients filter
-  // from O(tasks × clients × bindings) into O(tasks × clients).
-  const assignedTaskByClientUuid = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const [taskId, clients] of Object.entries(draftBindings)) {
-      for (const clientUuid of clients) map.set(clientUuid, taskId);
-    }
-    return map;
-  }, [draftBindings]);
+  // Inverted lookup of which task each client is bound to, rebuilt only when
+  // draftBindings changes. Shares invertBindings() with the "全选可用" reducer so
+  // the derivation can't drift, and keeps the selectable-clients filter at
+  // O(tasks × clients) instead of re-scanning bindings per client.
+  const assignedTaskByClientUuid = useMemo(
+    () => invertBindings(draftBindings),
+    [draftBindings],
+  );
 
   const handleSave = async () => {
     if (!config?.theme) return;

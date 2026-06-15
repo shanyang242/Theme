@@ -192,12 +192,6 @@ export function useViewMode() {
     [state.device, defaultMode],
   );
 
-  const resetMode = useCallback(() => {
-    clearOverride(getOverrideKey(state.device));
-    refreshSnapshot();
-    emit();
-  }, [state.device]);
-
   const toggleMode = useCallback(() => {
     setMode(mode === "compact" ? "large" : "compact");
   }, [mode, setMode]);
@@ -209,6 +203,5 @@ export function useViewMode() {
     isOverridden: state.override != null,
     setMode,
     toggleMode,
-    resetMode,
   };
 }

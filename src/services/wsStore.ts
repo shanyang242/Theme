@@ -9,7 +9,6 @@ interface State {
   metricsByUuid: Record<string, NodeMetrics>;
   trafficTrends: Record<string, NodeTrafficTrend>;
   order: string[];
-  lastSuccessAt: number;
   failureStreak: number;
 }
 
@@ -87,7 +86,6 @@ function emptyState(): State {
     metricsByUuid: {},
     trafficTrends: {},
     order: [],
-    lastSuccessAt: 0,
     failureStreak: 0,
   };
 }
@@ -843,7 +841,7 @@ async function refreshLatestStatus() {
     const applied = applyLatestStatus(records);
     const metricsChanged = applied.touchedMetrics.length > 0;
     const trafficTrendsChanged = applied.touchedTrafficTrends.length > 0;
-    const storeStatusChanged = state.failureStreak > 0 || state.lastSuccessAt === 0;
+    const storeStatusChanged = state.failureStreak > 0;
 
     if (metricsChanged || trafficTrendsChanged || storeStatusChanged) {
       commit(
@@ -852,7 +850,6 @@ async function refreshLatestStatus() {
           metricsByUuid: metricsChanged ? applied.nextMetricsByUuid : state.metricsByUuid,
           trafficTrends:
             trafficTrendsChanged ? applied.nextTrafficTrends : state.trafficTrends,
-          lastSuccessAt: Date.now(),
           failureStreak: 0,
         },
         {

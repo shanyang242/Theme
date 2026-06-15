@@ -60,7 +60,7 @@ export function QualityBars({ buckets, redrawKey, onHoverIndex }: QualityBarsPro
   return (
     <CanvasStrip
       className="mini-bar-row"
-      aria-hidden
+      ariaHidden
       height={16}
       redrawKey={redrawKey}
       getHoverIndex={getHoverIndex}

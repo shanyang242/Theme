@@ -422,7 +422,7 @@ export function LoadChart({
     setRealtimePoints((prev) => {
       const last = prev[prev.length - 1];
       if (last && Math.abs(last.time - point.time) < 1) return prev;
-      return [...prev, point].slice(-600);
+      return [...prev, point].slice(-REALTIME_SAMPLE_LIMIT);
     });
   }, [active, isRealtime, node]);
 
