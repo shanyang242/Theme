@@ -24,3 +24,7 @@ Thumbs.db
 .vite/
 coverage/
 *.tsbuildinfo
+
+# Local reference checkouts
+komari-main/
+komari-theme-purcarte-main/
